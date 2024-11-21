@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "test"
+version = "0.1.0"
+description = ""
+authors = ["piggy <piggy@relaxcloud.cn>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+grpcio = "^1.68.0"
+grpcio-tools = "^1.68.0"
+pytest = "^8.3.3"
+tomli = "^2.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.compress]
+compressed_file_path = "/Users/kpas/SynologyDrive/Github/M01-AnalyzeCoreProgram/compress/test/compressd/SysinternalsSuite.zip"
+decompressed_dir = "/Users/kpas/SynologyDrive/Github/M01-AnalyzeCoreProgram/compress/test/decompress"

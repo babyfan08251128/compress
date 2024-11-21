@@ -1,0 +1,20 @@
+[package]
+name = "compress"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "server"
+path = "src/main.rs"
+
+[dependencies]
+tonic = "0.10"
+prost = "0.12"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+sevenz-rust = "0.6.1"
+compress-tools = "0.15.1"
+
+[build-dependencies]
+tonic-build = "0.10"

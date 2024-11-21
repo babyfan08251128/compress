@@ -1,0 +1,110 @@
+use tonic::{transport::Server, Request, Response, Status};
+use std::fs::File;
+use std::path::Path;
+use tracing::{debug, error, info, Level};
+use tracing_subscriber::FmtSubscriber;
+
+pub mod myservice {
+    tonic::include_proto!("filedecompress");
+}
+
+use myservice::file_decompress_server::{FileDecompress, FileDecompressServer};
+use myservice::{MyRequest, MyResponse};
+
+use compress_tools::*;
+
+#[derive(Debug, Default)]
+pub struct FileDecompressImpl {}
+
+#[tonic::async_trait]
+impl FileDecompress for FileDecompressImpl {
+    async fn my_method(
+        &self,
+        request: Request<MyRequest>,
+    ) -> std::result::Result<Response<MyResponse>, Status> {
+        let req = request.into_inner();
+        info!("Received request: {:?}", req);
+        
+        // 检查输入路径是否为空
+        if req.compress_file_path.is_empty() || req.decompress_file_path.is_empty() {
+            error!("File paths cannot be empty");
+            return Ok(Response::new(MyResponse {
+                status: 1,
+                message: "File paths cannot be empty".to_string(),
+            }));
+        }
+
+        // 使用作用域块来确保文件句柄在整个解压过程中保持打开
+        let result = {
+            // 尝试打开压缩文件
+            let source_path = Path::new(&req.compress_file_path);
+            let mut source = match File::open(source_path) {
+                Ok(file) => file,
+                Err(e) => {
+                    error!("Failed to open source file: {}", e);
+                    return Ok(Response::new(MyResponse {
+                        status: 2,
+                        message: format!("Failed to open source file: {}", e),
+                    }));
+                }
+            };
+
+            // 获取解压目标路径
+            let dest_path = Path::new(&req.decompress_file_path);
+            info!("Uncompressing to: {}", dest_path.display());
+            info!("Uncompressing from: {}", source_path.display());
+
+            // 确保目标目录存在
+            if !dest_path.exists() {
+                if let Err(e) = std::fs::create_dir_all(dest_path) {
+                    error!("Failed to create destination directory: {}", e);
+                    return Ok(Response::new(MyResponse {
+                        status: 3,
+                        message: format!("Failed to create destination directory: {}", e),
+                    }));
+                }
+            }
+
+            // 执行解压操作，确保在这个作用域内完成
+            uncompress_archive(&mut source, &dest_path, Ownership::Preserve)
+        };
+
+        // 处理解压结果
+        match result {
+            Ok(_) => {
+                info!("Uncompression completed successfully");
+                Ok(Response::new(MyResponse {
+                    status: 0,
+                    message: "Uncompression completed successfully".to_string(),
+                }))
+            }
+            Err(e) => {
+                error!("Failed to uncompress archive: {}", e);
+                Ok(Response::new(MyResponse {
+                    status: 4,
+                    message: format!("Failed to uncompress archive: {}", e),
+                }))
+            }
+        }
+    }
+}
+
+#[tokio::main]
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    // 设置日志订阅器
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("设置日志订阅器失败");
+    let addr = "[::1]:50052".parse()?;
+    let service = FileDecompressImpl::default();
+
+    info!("Server listening on {}", addr);
+
+    Server::builder()
+        .add_service(FileDecompressServer::new(service))
+        .serve(addr)
+        .await?;
+
+    Ok(())
+}
