@@ -7,6 +7,14 @@ edition = "2021"
 name = "server"
 path = "src/main.rs"
 
+[lib]
+name = "compress"
+path = "src/lib.rs"
+
+[dev-dependencies]
+# 添加测试所需的依赖库
+testing-framework = "1.2.3"
+
 [dependencies]
 tonic = "0.10"
 prost = "0.12"
