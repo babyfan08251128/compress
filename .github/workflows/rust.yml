@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install libarchive
-      run: sudo apt-get update && sudo apt-get install -y libarchive-dev && apt-get install protobuf-compiler
+      run: sudo apt-get update && sudo apt-get install -y libarchive-dev && sudo apt-get install protobuf-compiler
     - name: Set PKG_CONFIG_PATH
       run: export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
     - name: Build
