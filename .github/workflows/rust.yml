@@ -16,6 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install libarchive
+      run: sudo apt-get update && sudo apt-get install -y libarchive-dev
+    - name: Set PKG_CONFIG_PATH
+      run: export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
     - name: Build
       run: cargo run
     - name: Run tests
